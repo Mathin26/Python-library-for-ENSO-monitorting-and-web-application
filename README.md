@@ -191,6 +191,4 @@ gunicorn weather_project.wsgi:application --bind 0.0.0.0:8000 --workers 4
 
 ---
 
-## 📄 License
 
-MIT License — see LICENSE file for details.
