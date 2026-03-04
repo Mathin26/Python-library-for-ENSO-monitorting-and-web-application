@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account — ENSOpy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e1a; --surface: #111827; --surface2: #1a2236;
+      --border: #1e2d4a; --text: #e2e8f0; --muted: #64748b;
+      --accent: #06b6d4; --accent2: #8b5cf6;
+      --success: #10b981; --error: #ef4444;
+      --mono: 'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: var(--sans); min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 2rem 1rem;
+    }
+
+    .top-bar {
+      width: 100%; max-width: 680px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 2.5rem;
+    }
+    .brand { font-family: var(--mono); font-size: 1rem; color: var(--accent); text-decoration: none; }
+    .brand span { color: var(--text); }
+    .signin-link { font-size: 0.83rem; color: var(--muted); }
+    .signin-link a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .signin-link a:hover { text-decoration: underline; }
+
+    .card {
+      width: 100%; max-width: 680px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 2rem 2.5rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--surface) 0%, #0d1829 100%);
+      position: relative; overflow: hidden;
+    }
+    .card-header::after {
+      content: '';
+      position: absolute; top: -40px; right: -40px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .card-title {
+      font-size: 1.4rem; font-weight: 600;
+      letter-spacing: -0.02em; margin-bottom: 0.3rem;
+    }
+    .card-sub { font-size: 0.85rem; color: var(--muted); }
+
+    .card-body { padding: 2rem 2.5rem; }
+
+    /* STEPS */
+    .steps {
+      display: flex; gap: 0; margin-bottom: 2rem;
+      border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    }
+    .step {
+      flex: 1; padding: 10px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.78rem; color: var(--muted);
+      background: var(--surface2);
+      cursor: pointer; transition: background 0.15s;
+      border-right: 1px solid var(--border);
+    }
+    .step:last-child { border-right: none; }
+    .step.active { background: rgba(6,182,212,0.08); color: var(--accent); }
+    .step-num {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: var(--border); color: var(--muted);
+      font-family: var(--mono); font-size: 0.65rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .step.active .step-num { background: var(--accent); color: #0a0e1a; }
+    .step.done .step-num { background: var(--success); color: #fff; }
+    .step.done { color: var(--success); }
+
+    /* FORM SECTIONS */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 580px) { .row { grid-template-columns: 1fr; } }
+
+    .field { margin-bottom: 1.1rem; }
+    .field-label {
+      display: block; font-size: 0.78rem; font-weight: 500;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    .field-label .optional {
+      font-size: 0.68rem; color: #3d5070;
+      font-style: italic; margin-left: 4px;
+    }
+    .field-input {
+      width: 100%;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text);
+      padding: 10px 14px; font-family: var(--sans); font-size: 0.88rem;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(6,182,212,0.1); }
+    .field-input::placeholder { color: #3d5070; }
+    .field-input.error { border-color: var(--error); }
+    .field-error { font-size: 0.75rem; color: #fca5a5; margin-top: 4px; }
+    .field-hint { font-size: 0.74rem; color: #3d5070; margin-top: 4px; line-height: 1.5; }
+
+    .api-key-box {
+      background: rgba(6,182,212,0.04);
+      border: 1px solid rgba(6,182,212,0.15);
+      border-radius: 10px; padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .api-key-title {
+      font-size: 0.82rem; font-weight: 600;
+      margin-bottom: 0.25rem; color: var(--accent);
+    }
+    .api-key-desc {
+      font-size: 0.78rem; color: var(--muted);
+      line-height: 1.6; margin-bottom: 1rem;
+    }
+    .api-key-link {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: var(--accent); font-size: 0.78rem; text-decoration: none;
+      font-family: var(--mono);
+    }
+    .api-key-link:hover { text-decoration: underline; }
+
+    .password-wrap { position: relative; }
+    .toggle-pw {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      cursor: pointer; color: var(--muted); font-size: 0.7rem;
+      font-family: var(--mono); background: none; border: none;
+      transition: color 0.15s;
+    }
+    .toggle-pw:hover { color: var(--accent); }
+
+    .strength-bar {
+      height: 3px; background: var(--border);
+      border-radius: 2px; margin-top: 6px; overflow: hidden;
+    }
+    .strength-fill {
+      height: 100%; border-radius: 2px;
+      transition: width 0.3s, background 0.3s;
+      width: 0;
+    }
+
+    .nav-btns {
+      display: flex; gap: 0.75rem; justify-content: flex-end;
+      padding-top: 1.5rem; border-top: 1px solid var(--border);
+      margin-top: 1.5rem;
+    }
+    .btn {
+      padding: 10px 22px; border-radius: 8px;
+      font-family: var(--sans); font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.15s;
+    }
+    .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); }
+    .btn-primary { background: var(--accent); color: #0a0e1a; }
+    .btn-primary:hover { background: #22d3ee; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #059669; }
+
+    .select-input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text);
+      padding: 10px 14px; font-family: var(--sans); font-size: 0.88rem;
+      outline: none; cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
+      padding-right: 40px;
+    }
+    .select-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(6,182,212,0.1); }
+
+    .error-banner {
+      background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 8px; padding: 10px 14px; margin-bottom: 1.5rem;
+      font-size: 0.83rem; color: #fca5a5;
+    }
+    .error-banner ul { list-style: none; padding: 0; }
+    .error-banner li::before { content: '• '; }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="/" class="brand">ENSO<span>py</span></a>
+  <div class="signin-link">Already have an account? <a href="/login/">Sign in →</a></div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Create your account</div>
+    <div class="card-sub">Free access to ENSO monitoring, weather APIs, and geospatial tools</div>
+  </div>
+
+  <div class="card-body">
+
+    <!-- STEP INDICATOR -->
+    <div class="steps">
+      <div class="step active" id="step-indicator-1" onclick="goToStep(1)">
+        <div class="step-num">1</div>
+        Account
+      </div>
+      <div class="step" id="step-indicator-2" onclick="goToStep(2)">
+        <div class="step-num">2</div>
+        Profile
+      </div>
+      <div class="step" id="step-indicator-3" onclick="goToStep(3)">
+        <div class="step-num">3</div>
+        API Key
+      </div>
+    </div>
+
+    {% if form.errors %}
+    <div class="error-banner">
+      <ul>
+        {% for field in form %}
+          {% for error in field.errors %}
+            <li>{{ field.label }}: {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" action="/register/" id="regForm">
+      {% csrf_token %}
+
+      <!-- SECTION 1: Account -->
+      <div class="section active" id="section-1">
+        <div class="field">
+          <label class="field-label" for="id_username">Username</label>
+          <input class="field-input {% if form.username.errors %}error{% endif %}"
+            type="text" id="id_username" name="username"
+            placeholder="Choose a username" value="{{ form.username.value|default:'' }}"
+            autofocus autocomplete="username" />
+          {% for e in form.username.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="id_email">
+            Email address <span class="optional">(optional but recommended)</span>
+          </label>
+          <input class="field-input {% if form.email.errors %}error{% endif %}"
+            type="email" id="id_email" name="email"
+            placeholder="your@email.com" value="{{ form.email.value|default:'' }}"
+            autocomplete="email" />
+          {% for e in form.email.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="id_password">Password</label>
+          <div class="password-wrap">
+            <input class="field-input" type="password" id="id_password"
+              name="password" placeholder="Minimum 8 characters"
+              style="padding-right:56px" oninput="checkStrength(this.value)"
+              autocomplete="new-password" />
+            <button type="button" class="toggle-pw" onclick="togglePw('id_password', this)">SHOW</button>
+          </div>
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+          {% for e in form.password.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="id_password2">Confirm password</label>
+          <div class="password-wrap">
+            <input class="field-input {% if form.password2.errors %}error{% endif %}"
+              type="password" id="id_password2" name="password2"
+              placeholder="Repeat your password"
+              style="padding-right:56px"
+              autocomplete="new-password" />
+            <button type="button" class="toggle-pw" onclick="togglePw('id_password2', this)">SHOW</button>
+          </div>
+          {% for e in form.password2.errors %}<div class="field-error">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="nav-btns">
+          <button type="button" class="btn btn-primary" onclick="nextStep(1)">Next: Profile →</button>
+        </div>
+      </div>
+
+      <!-- SECTION 2: Profile -->
+      <div class="section" id="section-2">
+        <div class="row">
+          <div class="field">
+            <label class="field-label" for="id_first_name">
+              First name <span class="optional">optional</span>
+            </label>
+            <input class="field-input" type="text" id="id_first_name"
+              name="first_name" placeholder="First name"
+              value="{{ form.first_name.value|default:'' }}" />
+          </div>
+          <div class="field">
+            <label class="field-label" for="id_last_name">
+              Last name <span class="optional">optional</span>
+            </label>
+            <input class="field-input" type="text" id="id_last_name"
+              name="last_name" placeholder="Last name"
+              value="{{ form.last_name.value|default:'' }}" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="id_organization">
+            Organization <span class="optional">optional</span>
+          </label>
+          <input class="field-input" type="text" id="id_organization"
+            name="organization" placeholder="University, company, agency..."
+            value="{{ form.organization.value|default:'' }}" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="id_purpose">Primary use case</label>
+          <select class="select-input" id="id_purpose" name="purpose">
+            {% for value, label in form.fields.purpose.choices %}
+            <option value="{{ value }}" {% if form.purpose.value == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="nav-btns">
+          <button type="button" class="btn btn-ghost" onclick="goToStep(1)">← Back</button>
+          <button type="button" class="btn btn-primary" onclick="nextStep(2)">Next: API Key →</button>
+        </div>
+      </div>
+
+      <!-- SECTION 3: API Key -->
+      <div class="section" id="section-3">
+        <div class="api-key-box">
+          <div class="api-key-title">🔑 OpenWeatherMap API Key</div>
+          <div class="api-key-desc">
+            Add your free OpenWeatherMap API key to unlock city search, 5-day forecasts,
+            and geocoding. Without it, current weather from Open-Meteo still works for free.
+            You can always add or change your key later in your profile.
+          </div>
+          <a class="api-key-link" href="https://openweathermap.org/api" target="_blank" rel="noopener">
+            ↗ Get a free key at openweathermap.org
+          </a>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="id_openweather_api_key">
+            API Key <span class="optional">optional — skip to proceed</span>
+          </label>
+          <input class="field-input" type="text" id="id_openweather_api_key"
+            name="openweather_api_key"
+            placeholder="e.g. a1b2c3d4e5f60718293a4b5c6d7e8f90"
+            value="{{ form.openweather_api_key.value|default:'' }}"
+            autocomplete="off" />
+          <div class="field-hint">
+            Free tier: 1,000 API calls/day · No credit card required ·
+            Key is stored securely in your account and never shared.
+          </div>
+        </div>
+
+        <div class="nav-btns">
+          <button type="button" class="btn btn-ghost" onclick="goToStep(2)">← Back</button>
+          <button type="submit" class="btn btn-success">Create Account →</button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+let currentStep = 1;
+
+// If form had errors, jump to the right section on reload
+{% if form.errors %}
+  {% if form.username.errors or form.email.errors or form.password.errors or form.password2.errors %}
+    currentStep = 1;
+  {% elif form.openweather_api_key.errors %}
+    currentStep = 3;
+  {% endif %}
+{% endif %}
+
+function goToStep(n) {
+  document.querySelectorAll('.section').forEach((s, i) => {
+    s.classList.toggle('active', i + 1 === n);
+  });
+  document.querySelectorAll('.step').forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i + 1 < n) s.classList.add('done');
+    else if (i + 1 === n) s.classList.add('active');
+  });
+  currentStep = n;
+}
+
+function nextStep(from) {
+  // Basic validation for step 1
+  if (from === 1) {
+    const username = document.getElementById('id_username').value.trim();
+    const password = document.getElementById('id_password').value;
+    const password2 = document.getElementById('id_password2').value;
+    if (!username) { alert('Please enter a username.'); return; }
+    if (password.length < 8) { alert('Password must be at least 8 characters.'); return; }
+    if (password !== password2) { alert('Passwords do not match.'); return; }
+  }
+  goToStep(from + 1);
+}
+
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  if (inp.type === 'password') { inp.type = 'text'; btn.textContent = 'HIDE'; }
+  else { inp.type = 'password'; btn.textContent = 'SHOW'; }
+}
+
+function checkStrength(val) {
+  const fill = document.getElementById('strengthFill');
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const pct = ['0%', '25%', '50%', '75%', '100%'][score];
+  const color = ['#ef4444', '#ef4444', '#f59e0b', '#3b82f6', '#10b981'][score];
+  fill.style.width = pct;
+  fill.style.background = color;
+}
+
+// Restore step state if form had errors
+window.addEventListener('DOMContentLoaded', () => {
+  goToStep(currentStep);
+});
+</script>
+</body>
+</html>

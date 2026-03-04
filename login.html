@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sign In — ENSOpy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --abyss:#04080f;--deep:#080d1a;--navy:#0c1628;--surface:#111d33;
+  --surface2:#172240;--rim:#1e3058;--border:#243a5e;--muted:#4a6285;
+  --soft:#7a96b8;--text:#c8ddf0;--bright:#e8f4ff;
+  --teal:#00d4cc;--teal2:#00b8e6;--glow:#00ffee;
+  --el:#ff4d6d;--la:#3a86ff;--gold:#f4b942;--green:#00e5a0;
+  --mono:'JetBrains Mono',monospace;--body:'Outfit',sans-serif;--display:'Syne',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--abyss);color:var(--text);font-family:var(--body);font-size:15px;display:flex;min-height:100vh}
+.ocean-bg{position:fixed;inset:0;z-index:0;background:
+  radial-gradient(ellipse 120% 80% at 10% 20%,rgba(0,212,204,0.07) 0%,transparent 50%),
+  radial-gradient(ellipse 80% 60% at 90% 80%,rgba(0,184,230,0.05) 0%,transparent 50%),
+  linear-gradient(180deg,#04080f 0%,#080d1a 40%,#0c1628 100%)}
+.grid-bg{position:fixed;inset:0;z-index:0;background:
+  repeating-linear-gradient(0deg,transparent,transparent 47px,rgba(0,212,204,0.02) 48px),
+  repeating-linear-gradient(90deg,transparent,transparent 47px,rgba(0,212,204,0.015) 48px)}
+.shell{position:relative;z-index:1;display:grid;grid-template-columns:1fr 500px;min-height:100vh;width:100%}
+.left{display:flex;flex-direction:column;justify-content:center;padding:4rem 4rem 4rem 5rem;position:relative;overflow:hidden}
+.logo{position:absolute;top:2.5rem;left:5rem;font-family:var(--display);font-size:1.1rem;font-weight:800;color:var(--teal);text-decoration:none}
+.logo em{color:var(--bright);font-style:normal}
+.tagline{font-family:var(--mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:1.5rem}
+.headline{font-family:var(--display);font-size:3rem;font-weight:800;line-height:1.08;letter-spacing:-0.03em;margin-bottom:1.5rem}
+.hl-teal{display:block;background:linear-gradient(90deg,var(--teal),var(--teal2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hl-warm{display:block;background:linear-gradient(90deg,var(--el),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.sub{font-size:1rem;color:var(--soft);line-height:1.75;max-width:440px;margin-bottom:2.5rem}
+.features{display:flex;flex-direction:column;gap:0.6rem;margin-bottom:2.5rem}
+.feat{display:flex;align-items:center;gap:1rem;padding:0.8rem 1.1rem;background:rgba(17,29,51,0.7);border:1px solid var(--rim);border-radius:10px;backdrop-filter:blur(8px);transition:border-color 0.25s,transform 0.2s}
+.feat:hover{border-color:var(--teal);transform:translateX(4px)}
+.feat-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.fi-teal{background:rgba(0,212,204,0.12);border:1px solid rgba(0,212,204,0.2)}
+.fi-red{background:rgba(255,77,109,0.12);border:1px solid rgba(255,77,109,0.2)}
+.fi-blue{background:rgba(58,134,255,0.12);border:1px solid rgba(58,134,255,0.2)}
+.fi-gold{background:rgba(244,185,66,0.12);border:1px solid rgba(244,185,66,0.2)}
+.feat-body{flex:1}
+.feat-title{font-size:0.85rem;font-weight:600;color:var(--bright);margin-bottom:1px}
+.feat-desc{font-size:0.75rem;color:var(--muted);line-height:1.4}
+.chips{display:flex;gap:0.6rem;flex-wrap:wrap}
+.chip{display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:100px;font-family:var(--mono);font-size:0.65rem}
+.chip-teal{background:rgba(0,212,204,0.08);border:1px solid rgba(0,212,204,0.25);color:var(--teal)}
+.chip-el{background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.25);color:#ff8099}
+.chip-la{background:rgba(58,134,255,0.08);border:1px solid rgba(58,134,255,0.25);color:#7aadff}
+.chip-neu{background:rgba(74,98,133,0.15);border:1px solid rgba(74,98,133,0.3);color:var(--soft)}
+.chip-dot{width:6px;height:6px;border-radius:50%}
+.right{background:var(--navy);border-left:1px solid var(--rim);display:flex;flex-direction:column;justify-content:center;padding:3rem;position:relative}
+.right::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--teal),var(--teal2),var(--teal))}
+.fh{margin-bottom:1.75rem}
+.fh-title{font-family:var(--display);font-size:1.6rem;font-weight:700;letter-spacing:-0.02em;color:var(--bright);margin-bottom:4px}
+.fh-sub{font-size:0.82rem;color:var(--muted)}
+.fh-sub a{color:var(--teal);text-decoration:none}
+.fh-sub a:hover{text-decoration:underline}
+.field{margin-bottom:1rem}
+.fl{display:block;font-size:0.7rem;font-weight:500;color:var(--soft);margin-bottom:5px;letter-spacing:0.05em;text-transform:uppercase}
+.fi{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--bright);padding:11px 14px;font-family:var(--body);font-size:0.9rem;outline:none;transition:border-color 0.2s,box-shadow 0.2s,background 0.2s}
+.fi:focus{border-color:var(--teal);background:var(--surface2);box-shadow:0 0 0 3px rgba(0,212,204,0.1)}
+.fi::placeholder{color:var(--muted)}
+.pw-wrap{position:relative}
+.pw-wrap .fi{padding-right:60px}
+.pw-tog{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--muted);font-family:var(--mono);font-size:0.62rem;background:none;border:none;transition:color 0.15s}
+.pw-tog:hover{color:var(--teal)}
+.check-row{display:flex;align-items:center;justify-content:space-between;margin:0.25rem 0 1.25rem}
+.chk-label{display:flex;align-items:center;gap:7px;font-size:0.8rem;color:var(--muted);cursor:pointer}
+.chk-label input{accent-color:var(--teal)}
+.alert{border-radius:8px;padding:10px 14px;margin-bottom:1rem;font-size:0.8rem;display:flex;align-items:center;gap:8px}
+.al-err{background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.25);color:#ff8099}
+.al-ok{background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.25);color:var(--green)}
+.btn{width:100%;padding:12px;border-radius:9px;font-family:var(--body);font-size:0.95rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:linear-gradient(135deg,var(--teal),var(--teal2));color:var(--abyss)}
+.btn-primary:hover{background:linear-gradient(135deg,#00ffee,#00d4cc);box-shadow:0 0 24px rgba(0,212,204,0.35);transform:translateY(-1px)}
+.btn-ghost{background:var(--surface);color:var(--soft);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.divider{display:flex;align-items:center;gap:10px;margin:1.25rem 0;font-size:0.75rem;color:var(--muted)}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .left{display:none}
+  .right{border-left:none;padding:2rem 1.5rem;min-height:100vh;justify-content:center}
+}
+</style>
+</head>
+<body>
+<div class="ocean-bg"></div>
+<div class="grid-bg"></div>
+<div class="shell">
+
+  <div class="left">
+    <a href="/" class="logo">ENSO<em>py</em></a>
+    <p class="tagline">Climate Intelligence Platform</p>
+    <h1 class="headline">
+      <span>Track</span>
+      <span class="hl-teal">El Niño &amp; La Niña</span>
+      <span class="hl-warm">before they strike.</span>
+    </h1>
+    <p class="sub">Real-time ENSO monitoring, live weather APIs, and geospatial climate teleconnections — bring your own API key for full access.</p>
+    <div class="features">
+      <div class="feat"><div class="feat-icon fi-teal">🌊</div><div class="feat-body"><div class="feat-title">ONI &amp; SST Monitoring</div><div class="feat-desc">Oceanic Niño Index tracking with historical series from 2010 to present</div></div></div>
+      <div class="feat"><div class="feat-icon fi-red">🌡️</div><div class="feat-body"><div class="feat-title">Live Weather APIs</div><div class="feat-desc">Open-Meteo free tier + OpenWeatherMap forecasts, air quality &amp; geocoding</div></div></div>
+      <div class="feat"><div class="feat-icon fi-blue">🗺️</div><div class="feat-body"><div class="feat-title">Geospatial Map</div><div class="feat-desc">Interactive Leaflet map with ENSO impact regions and per-click weather data</div></div></div>
+      <div class="feat"><div class="feat-icon fi-gold">🔑</div><div class="feat-body"><div class="feat-title">Per-User API Keys</div><div class="feat-desc">Each user securely stores their own OpenWeatherMap or NOAA key</div></div></div>
+    </div>
+    <div class="chips">
+      <span class="chip chip-el"><span class="chip-dot" style="background:var(--el)"></span>El Niño ≥ +0.5</span>
+      <span class="chip chip-la"><span class="chip-dot" style="background:var(--la)"></span>La Niña ≤ −0.5</span>
+      <span class="chip chip-neu"><span class="chip-dot" style="background:var(--muted)"></span>Neutral</span>
+      <span class="chip chip-teal"><span class="chip-dot" style="background:var(--teal)"></span>Free Tier Available</span>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="fh">
+      <div class="fh-title">Welcome back</div>
+      <div class="fh-sub">New to ENSOpy? <a href="/register/">Create a free account →</a></div>
+    </div>
+
+    {% if error %}
+    <div class="alert al-err"><span>⚠</span> {{ error }}</div>
+    {% endif %}
+
+    {% if messages %}{% for msg in messages %}
+    <div class="alert al-ok"><span>✓</span> {{ msg }}</div>
+    {% endfor %}{% endif %}
+
+    <form method="post" action="/login/">
+      {% csrf_token %}
+      <div class="field">
+        <label class="fl" for="id_username">Username</label>
+        <input class="fi" type="text" id="id_username" name="username"
+          placeholder="Your username" autocomplete="username" autofocus
+          value="{{ form.username.value|default:'' }}"/>
+      </div>
+      <div class="field">
+        <label class="fl" for="id_password">Password</label>
+        <div class="pw-wrap">
+          <input class="fi" type="password" id="id_password" name="password"
+            placeholder="Your password" autocomplete="current-password"/>
+          <button type="button" class="pw-tog" onclick="togPw()">SHOW</button>
+        </div>
+      </div>
+      <div class="check-row">
+        <label class="chk-label">
+          <input type="checkbox" name="remember_me"/> Remember me
+        </label>
+      </div>
+      <button type="submit" class="btn btn-primary">Sign In →</button>
+    </form>
+
+    <div class="divider">or</div>
+
+    <a href="/register/" class="btn btn-ghost" style="text-decoration:none">Create a free account</a>
+  </div>
+</div>
+<script>
+function togPw(){
+  const i=document.getElementById('id_password');
+  const b=document.querySelector('.pw-tog');
+  i.type=i.type==='password'?'text':'password';
+  b.textContent=i.type==='password'?'SHOW':'HIDE';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+{% extends "weather_app/base.html" %}
+{% block title %}Profile & API Keys — ENSOpy{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-header {
+    background: linear-gradient(135deg, var(--surface) 0%, #0d1829 100%);
+    border-bottom: 1px solid var(--border); padding: 2rem 0;
+  }
+  .page-header-inner { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+  .container { max-width: 1100px; }
+
+  .avatar {
+    width: 56px; height: 56px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 1.1rem; font-weight: 700;
+    color: #0a0e1a; flex-shrink: 0;
+  }
+
+  /* KEY CARDS */
+  .key-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 1rem 1.25rem;
+    display: flex; align-items: center; gap: 1rem;
+    transition: border-color 0.2s;
+  }
+  .key-card.active-key {
+    border-color: var(--accent);
+    background: rgba(6,182,212,0.04);
+  }
+  .key-card:hover { border-color: rgba(6,182,212,0.4); }
+  .key-icon { font-size: 1.3rem; flex-shrink: 0; }
+  .key-info { flex: 1; min-width: 0; }
+  .key-label { font-weight: 600; font-size: 0.88rem; margin-bottom: 2px; }
+  .key-value {
+    font-family: var(--mono); font-size: 0.75rem;
+    color: var(--muted); letter-spacing: 0.03em;
+  }
+  .key-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+  .key-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .key-btn {
+    padding: 5px 10px; border-radius: 6px; cursor: pointer;
+    font-size: 0.74rem; font-weight: 500; border: none;
+    font-family: var(--sans); transition: all 0.15s;
+  }
+  .key-btn-activate { background: rgba(6,182,212,0.15); color: var(--accent); }
+  .key-btn-activate:hover { background: rgba(6,182,212,0.25); }
+  .key-btn-toggle { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+  .key-btn-toggle:hover { color: var(--text); }
+  .key-btn-delete { background: rgba(239,68,68,0.1); color: #f87171; }
+  .key-btn-delete:hover { background: rgba(239,68,68,0.2); }
+  .active-badge {
+    background: rgba(6,182,212,0.15); color: var(--accent);
+    border: 1px solid rgba(6,182,212,0.3);
+    padding: 2px 8px; border-radius: 4px;
+    font-family: var(--mono); font-size: 0.65rem;
+  }
+  .inactive-badge {
+    background: rgba(107,114,128,0.1); color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 2px 8px; border-radius: 4px;
+    font-family: var(--mono); font-size: 0.65rem;
+  }
+
+  /* ADD KEY FORM */
+  .add-form-panel {
+    background: var(--surface);
+    border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden;
+  }
+  .add-form-toggle {
+    width: 100%; padding: 1rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    background: none; border: none; color: var(--text);
+    cursor: pointer; font-family: var(--sans); font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .add-form-toggle:hover { background: var(--surface2); }
+  .add-form-body { padding: 0 1.5rem 1.5rem; display: none; }
+  .add-form-body.open { display: block; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+
+  .field { margin-bottom: 1rem; }
+  .field-label {
+    display: block; font-size: 0.75rem; font-weight: 500;
+    color: var(--muted); margin-bottom: 5px;
+  }
+  .field-input {
+    width: 100%; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 9px 12px;
+    font-family: var(--sans); font-size: 0.86rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(6,182,212,0.08); }
+  .field-input::placeholder { color: #3d5070; }
+  .select-input {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); padding: 9px 12px;
+    font-family: var(--sans); font-size: 0.86rem; outline: none;
+    cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; background-size: 14px;
+    padding-right: 34px;
+  }
+  .select-input:focus { border-color: var(--accent); }
+
+  .btn {
+    padding: 9px 18px; border-radius: 8px;
+    font-family: var(--sans); font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #0a0e1a; }
+  .btn-primary:hover { background: #22d3ee; }
+  .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); }
+
+  .empty-state {
+    text-align: center; padding: 2.5rem 1rem;
+    color: var(--muted); font-size: 0.85rem;
+  }
+  .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+  .alert {
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 1rem;
+    font-size: 0.83rem; display: flex; align-items: center; gap: 8px;
+  }
+  .alert-success { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); color: #6ee7b7; }
+  .alert-error { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; }
+
+  .info-box {
+    background: rgba(6,182,212,0.04);
+    border: 1px solid rgba(6,182,212,0.15);
+    border-radius: 8px; padding: 1rem;
+    font-size: 0.82rem; color: var(--muted); line-height: 1.6;
+  }
+  .info-box a { color: var(--accent); text-decoration: none; }
+  .info-box a:hover { text-decoration: underline; }
+
+  .provider-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 768px) { .provider-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-inner">
+    <div style="display:flex;align-items:center;gap:1.25rem">
+      <div class="avatar">
+        {{ request.user.first_name|slice:":1"|upper|default:request.user.username|slice:":1"|upper }}
+      </div>
+      <div>
+        <div style="font-size:1.2rem;font-weight:600;margin-bottom:2px">
+          {{ request.user.get_full_name|default:request.user.username }}
+        </div>
+        <div style="font-size:0.82rem;color:var(--muted)">
+          @{{ request.user.username }}
+          {% if request.user.organization %} · {{ request.user.organization }}{% endif %}
+          {% if request.user.email %} · {{ request.user.email }}{% endif %}
+        </div>
+      </div>
+      <div style="margin-left:auto">
+        {% if has_owm_key %}
+          <span class="phase-badge phase-el-nino" style="background:rgba(16,185,129,0.12);color:#10b981;border-color:rgba(16,185,129,0.3)">
+            ✓ OWM Key Active
+          </span>
+        {% else %}
+          <span class="phase-badge phase-neutral">No OWM Key</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="alert {% if 'error' in msg.tags %}alert-error{% else %}alert-success{% endif %}">
+      {% if 'error' in msg.tags %}⚠{% else %}✓{% endif %} {{ msg }}
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="grid grid-2" style="gap:2rem;align-items:start">
+
+    <!-- LEFT: API KEYS -->
+    <div style="grid-column:1/3">
+
+      <!-- OWM KEYS -->
+      <div style="margin-bottom:2rem">
+        <div class="section-header mb-2">
+          <div class="section-title">🔑 OpenWeatherMap API Keys</div>
+          <a href="https://openweathermap.org/api" target="_blank" class="btn btn-ghost" style="font-size:0.75rem;padding:5px 10px">Get Free Key ↗</a>
+        </div>
+
+        <div class="info-box mb-2">
+          OpenWeatherMap keys unlock <strong style="color:var(--text)">city search, 5-day forecasts, and geocoding</strong>.
+          Free tier: 1,000 API calls/day. No credit card required.
+          <a href="https://openweathermap.org/price" target="_blank">See pricing →</a>
+        </div>
+
+        {% if owm_keys %}
+          <div style="display:flex;flex-direction:column;gap:0.6rem">
+          {% for key in owm_keys %}
+            <div class="key-card {% if active_key_id == key.id|stringformat:'s' %}active-key{% endif %}">
+              <div class="key-icon">🌤️</div>
+              <div class="key-info">
+                <div class="key-label">
+                  {{ key.label }}
+                  {% if active_key_id == key.id|stringformat:'s' %}
+                    <span class="active-badge" style="margin-left:6px">ACTIVE</span>
+                  {% elif not key.is_active %}
+                    <span class="inactive-badge" style="margin-left:6px">DISABLED</span>
+                  {% endif %}
+                </div>
+                <div class="key-value">{{ key.mask }}</div>
+                <div class="key-meta">
+                  Added {{ key.created_at|date:"M j, Y" }}
+                  {% if key.last_used_at %}· Used {{ key.usage_count }}x · Last {{ key.last_used_at|date:"M j" }}{% endif %}
+                </div>
+              </div>
+              <div class="key-actions">
+                {% if key.is_active and active_key_id != key.id|stringformat:'s' %}
+                  <form method="post" style="display:inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="activate_key">
+                    <input type="hidden" name="key_id" value="{{ key.id }}">
+                    <button type="submit" class="key-btn key-btn-activate">Use This</button>
+                  </form>
+                {% endif %}
+                <form method="post" style="display:inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="toggle_key">
+                  <input type="hidden" name="key_id" value="{{ key.id }}">
+                  <button type="submit" class="key-btn key-btn-toggle">
+                    {{ key.is_active|yesno:"Disable,Enable" }}
+                  </button>
+                </form>
+                <form method="post" style="display:inline" onsubmit="return confirm('Delete this key?')">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_key">
+                  <input type="hidden" name="key_id" value="{{ key.id }}">
+                  <button type="submit" class="key-btn key-btn-delete">Delete</button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state card" style="padding:1.5rem">
+            <div class="empty-icon">🔑</div>
+            No OpenWeatherMap keys added yet. Add one below to unlock all features.
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- NOAA KEYS -->
+      <div style="margin-bottom:2rem">
+        <div class="section-header mb-2">
+          <div class="section-title">🏛️ NOAA CDO API Keys</div>
+          <a href="https://www.ncdc.noaa.gov/cdo-web/token" target="_blank" class="btn btn-ghost" style="font-size:0.75rem;padding:5px 10px">Get Token ↗</a>
+        </div>
+
+        {% if noaa_keys %}
+          <div style="display:flex;flex-direction:column;gap:0.6rem">
+          {% for key in noaa_keys %}
+            <div class="key-card">
+              <div class="key-icon">📡</div>
+              <div class="key-info">
+                <div class="key-label">{{ key.label }}</div>
+                <div class="key-value">{{ key.mask }}</div>
+                <div class="key-meta">Added {{ key.created_at|date:"M j, Y" }}</div>
+              </div>
+              <div class="key-actions">
+                <form method="post" style="display:inline" onsubmit="return confirm('Delete this key?')">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete_key">
+                  <input type="hidden" name="key_id" value="{{ key.id }}">
+                  <button type="submit" class="key-btn key-btn-delete">Delete</button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state card" style="padding:1rem;text-align:left;font-size:0.8rem;color:var(--muted)">
+            No NOAA keys added. <a href="https://www.ncdc.noaa.gov/cdo-web/token" target="_blank" style="color:var(--accent)">Request a free NOAA CDO token →</a>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- ADD NEW KEY -->
+      <div class="add-form-panel">
+        <button type="button" class="add-form-toggle" onclick="toggleAddForm()">
+          <span>+ Add New API Key</span>
+          <span id="addToggleIcon" style="font-family:var(--mono);font-size:0.8rem;color:var(--muted)">▼</span>
+        </button>
+        <div class="add-form-body {% if form_error %}open{% endif %}" id="addFormBody">
+          <div style="height:1px;background:var(--border);margin-bottom:1.5rem"></div>
+
+          {% if form_error %}
+          <div class="alert alert-error">⚠ {{ form_error }}</div>
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add_key">
+
+            <div class="form-row">
+              <div class="field">
+                <label class="field-label">Provider</label>
+                <select class="select-input" name="provider">
+                  <option value="openweathermap">OpenWeatherMap</option>
+                  <option value="noaa">NOAA Climate Data Online</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">Label / Name</label>
+                <input class="field-input" type="text" name="label" value="My API Key" placeholder="Label for this key" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">API Key Value</label>
+              <input class="field-input" type="text" name="key_value"
+                placeholder="Paste your full API key here"
+                autocomplete="off" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save API Key</button>
+          </form>
+        </div>
+      </div>
+
+    </div><!-- /left col -->
+
+  </div><!-- /grid -->
+
+  <!-- PROFILE SETTINGS -->
+  <div class="card mt-3" style="margin-top:2rem">
+    <div class="section-title mb-2">👤 Profile Settings</div>
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update_profile">
+      <div class="grid grid-2" style="gap:1rem;margin-bottom:1rem">
+        <div class="field" style="margin-bottom:0">
+          <label class="field-label">First name</label>
+          <input class="field-input" type="text" name="first_name" value="{{ request.user.first_name }}" placeholder="First name" />
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label class="field-label">Last name</label>
+          <input class="field-input" type="text" name="last_name" value="{{ request.user.last_name }}" placeholder="Last name" />
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label class="field-label">Organization</label>
+          <input class="field-input" type="text" name="organization" value="{{ request.user.organization }}" placeholder="University, company, etc." />
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label class="field-label">Primary use case</label>
+          <select class="select-input" name="purpose">
+            {% for value, label in purpose_choices %}
+            <option value="{{ value }}" {% if request.user.purpose == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Save Profile</button>
+    </form>
+  </div>
+
+  <!-- DANGER ZONE -->
+  <div class="card mt-3" style="margin-top:1.25rem;border-color:rgba(239,68,68,0.2)">
+    <div class="section-title mb-2" style="color:#f87171">⚠ Session</div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:0.85rem;color:var(--muted)">
+        Signed in as <strong style="color:var(--text)">{{ request.user.username }}</strong>.
+        Member since {{ request.user.date_joined|date:"M j, Y" }}.
+      </div>
+      <a href="/logout/" class="btn btn-ghost" style="color:#f87171;border-color:rgba(239,68,68,0.3)">Sign Out</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleAddForm() {
+  const body = document.getElementById('addFormBody');
+  const icon = document.getElementById('addToggleIcon');
+  body.classList.toggle('open');
+  icon.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,403 @@
+{% extends "weather_app/base.html" %}
+{% block title %}ENSOpy — Geospatial Weather Map{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  body { overflow: hidden; }
+  .map-layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    height: calc(100vh - 60px);
+  }
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  .sidebar-section {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-title {
+    font-family: var(--mono); font-size: 0.65rem;
+    color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  #map { width: 100%; height: 100%; }
+  .search-wrap { position: relative; }
+  .search-input {
+    width: 100%; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 9px 12px;
+    font-family: var(--sans); font-size: 0.85rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-btn {
+    position: absolute; right: 8px; top: 50%;
+    transform: translateY(-50%);
+    background: var(--accent); color: #0a0e1a;
+    border: none; border-radius: 6px;
+    padding: 4px 10px; cursor: pointer; font-size: 0.78rem; font-weight: 600;
+  }
+  .layer-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+  .layer-btn {
+    padding: 5px 10px; border-radius: 6px; cursor: pointer;
+    font-size: 0.75rem; font-weight: 500;
+    background: var(--surface2); color: var(--muted);
+    border: 1px solid var(--border); transition: all 0.15s;
+  }
+  .layer-btn.active { background: rgba(6,182,212,0.15); color: var(--accent); border-color: var(--accent); }
+  .weather-card {
+    background: var(--surface2); border-radius: 10px;
+    border: 1px solid var(--border); padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .weather-temp { font-family: var(--mono); font-size: 2.5rem; font-weight: 700; color: var(--accent); }
+  .weather-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+  .impact-item {
+    background: var(--surface2); border-radius: 8px; border: 1px solid var(--border);
+    padding: 0.75rem; margin-bottom: 0.6rem; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .impact-item:hover { border-color: var(--accent); }
+  .impact-region { font-size: 0.82rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .impact-text { font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
+  .impact-season { font-size: 0.7rem; color: var(--accent); margin-top: 0.25rem; font-family: var(--mono); }
+  .loading { color: var(--muted); font-size: 0.82rem; }
+  .legend {
+    position: absolute; bottom: 30px; right: 10px; z-index: 999;
+    background: rgba(10,14,26,0.92); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0.75rem 1rem; min-width: 160px;
+  }
+  .legend-title { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 0.75rem; color: var(--text); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .enso-status-bar {
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+    padding: 0.6rem 1.25rem;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  }
+  .enso-status-label { font-family: var(--mono); font-size: 0.65rem; color: var(--muted); }
+  .enso-status-val { font-family: var(--mono); font-size: 0.8rem; }
+  @media (max-width: 768px) {
+    .map-layout { grid-template-columns: 1fr; grid-template-rows: 1fr 40vh; }
+    body { overflow: auto; }
+    .sidebar { order: 2; max-height: 40vh; overflow-y: auto; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="map-layout">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <!-- ENSO Status Bar -->
+    <div class="enso-status-bar">
+      <span class="enso-status-label">ENSO:</span>
+      <span class="enso-status-val">
+        {% if summary.current_phase == "El Niño" %}
+          <span class="phase-badge phase-el-nino" style="font-size:0.7rem;padding:2px 8px">El Niño</span>
+        {% elif summary.current_phase == "La Niña" %}
+          <span class="phase-badge phase-la-nina" style="font-size:0.7rem;padding:2px 8px">La Niña</span>
+        {% else %}
+          <span class="phase-badge phase-neutral" style="font-size:0.7rem;padding:2px 8px">Neutral</span>
+        {% endif %}
+      </span>
+      <span class="enso-status-label">ONI:</span>
+      <span class="enso-status-val text-mono">{{ summary.oni_value }}</span>
+      <span class="enso-status-label" style="margin-left:auto;font-size:0.6rem">{{ summary.data_period }}</span>
+    </div>
+
+    <!-- LOCATION SEARCH -->
+    <div class="sidebar-section">
+      <div class="sidebar-title">🔍 Search Location</div>
+      <div class="search-wrap mb-1">
+        <input id="citySearch" class="search-input" type="text" placeholder="Enter city name..." />
+        <button class="search-btn" onclick="searchCity()">Go</button>
+      </div>
+      <div id="searchResults" style="font-size:0.78rem;color:var(--muted)"></div>
+    </div>
+
+    <!-- MAP LAYERS -->
+    <div class="sidebar-section">
+      <div class="sidebar-title">🗂️ Map Layers</div>
+      <div class="layer-btns">
+        <button class="layer-btn active" onclick="toggleLayer('enso')">ENSO Regions</button>
+        <button class="layer-btn active" onclick="toggleLayer('stations')">Weather</button>
+        <button class="layer-btn" onclick="toggleLayer('sst')">SST Points</button>
+      </div>
+      <div style="font-size:0.75rem;color:var(--muted)">Click any location on the map to fetch live weather data.</div>
+    </div>
+
+    <!-- CURRENT WEATHER -->
+    <div class="sidebar-section">
+      <div class="sidebar-title">🌡️ Location Weather</div>
+      <div id="weatherPanel">
+        <div class="loading">Click the map to load weather for any location...</div>
+      </div>
+    </div>
+
+    <!-- ENSO IMPACTS -->
+    <div class="sidebar-section" style="flex:1">
+      <div class="sidebar-title">⚡ ENSO Regional Impacts</div>
+      <div id="impactPanel">
+        {% for impact in summary|default:"" %}{% endfor %}
+        <div class="loading">Select a location to see ENSO teleconnection impacts...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAP -->
+  <div style="position:relative">
+    <div id="map"></div>
+    <div class="legend">
+      <div class="legend-title">ENSO Regions</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.6)"></div>El Niño Effect</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(59,130,246,0.6)"></div>La Niña Effect</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(16,185,129,0.6)"></div>Both / Mixed</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(6,182,212,0.8)"></div>Weather Station</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(245,158,11,0.8)"></div>SST Point</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ────────────────────────── Init Map ──────────────────────────
+const map = L.map('map', { center: [10, 0], zoom: 2, zoomControl: true });
+
+// Dark tile layer
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CartoDB',
+  maxZoom: 18,
+}).addTo(map);
+
+// ────────────────────────── ENSO Impact Regions ──────────────────────────
+const impacts = {{ impacts_json|safe }};
+const currentPhase = "{{ summary.current_phase }}";
+
+const impactLayers = L.layerGroup();
+const layerVis = { enso: true, stations: true, sst: false };
+
+function phaseColor(impact_variable, phase) {
+  if (impact_variable === 'temperature') return '#ef4444';
+  if (impact_variable === 'precipitation') return '#3b82f6';
+  return '#10b981';
+}
+
+impacts.forEach(region => {
+  const [latMin, latMax] = region.latitude_range;
+  const [lonMin, lonMax] = region.longitude_range;
+  const color = phaseColor(region.impact_variable, region.current_phase);
+
+  const rect = L.rectangle([[latMin, lonMin], [latMax, lonMax]], {
+    color: color,
+    weight: 1.5,
+    fillColor: color,
+    fillOpacity: 0.12,
+    dashArray: '4 4',
+  });
+
+  rect.bindPopup(`
+    <div style="font-family:'DM Sans',sans-serif;min-width:220px">
+      <div style="font-weight:700;font-size:0.9rem;margin-bottom:6px;color:#e2e8f0">${region.region_name}</div>
+      <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:4px">
+        <b style="color:#06b6d4">ENSO Phase:</b> ${region.current_phase}
+      </div>
+      <div style="font-size:0.8rem;color:#cbd5e1;margin-bottom:6px">${region.impact}</div>
+      <div style="font-size:0.7rem;color:#06b6d4">Season: ${region.affected_season}</div>
+    </div>
+  `, { className: 'dark-popup' });
+
+  impactLayers.addLayer(rect);
+});
+
+impactLayers.addTo(map);
+
+// ────────────────────────── Default Weather Stations ──────────────────────────
+const stationLayer = L.layerGroup();
+const stations = [
+  { name: "Chennai", lat: 13.08, lon: 80.27, country: "IN" },
+  { name: "Mumbai", lat: 19.08, lon: 72.88, country: "IN" },
+  { name: "Delhi", lat: 28.61, lon: 77.20, country: "IN" },
+  { name: "London", lat: 51.51, lon: -0.13, country: "GB" },
+  { name: "New York", lat: 40.71, lon: -74.01, country: "US" },
+  { name: "Tokyo", lat: 35.68, lon: 139.69, country: "JP" },
+  { name: "Sydney", lat: -33.87, lon: 151.21, country: "AU" },
+  { name: "Nairobi", lat: -1.29, lon: 36.82, country: "KE" },
+  { name: "São Paulo", lat: -23.55, lon: -46.63, country: "BR" },
+  { name: "Cairo", lat: 30.04, lon: 31.24, country: "EG" },
+];
+
+const stationIcon = L.circleMarker;
+stations.forEach(s => {
+  const marker = L.circleMarker([s.lat, s.lon], {
+    radius: 7, color: '#06b6d4', fillColor: '#06b6d4',
+    fillOpacity: 0.8, weight: 2,
+  });
+  marker.bindTooltip(s.name, { direction: 'top', className: 'dark-tooltip' });
+  marker.on('click', () => loadWeather(s.lat, s.lon, s.name));
+  stationLayer.addLayer(marker);
+});
+stationLayer.addTo(map);
+
+// ────────────────────────── SST Points (Niño 3.4 Region) ──────────────────────────
+const sstLayer = L.layerGroup();
+const sstPoints = [
+  { lat: 5, lon: -170 }, { lat: 5, lon: -150 }, { lat: 5, lon: -120 },
+  { lat: 0, lon: -170 }, { lat: 0, lon: -150 }, { lat: 0, lon: -120 },
+  { lat: -5, lon: -170 }, { lat: -5, lon: -150 }, { lat: -5, lon: -120 },
+];
+sstPoints.forEach(p => {
+  const m = L.circleMarker([p.lat, p.lon], {
+    radius: 5, color: '#f59e0b', fillColor: '#f59e0b',
+    fillOpacity: 0.7, weight: 1.5,
+  });
+  m.bindTooltip(`Niño 3.4 (${p.lat}, ${p.lon})`, { direction: 'top' });
+  sstLayer.addLayer(m);
+});
+
+// ────────────────────────── Map Click ──────────────────────────
+let clickMarker = null;
+map.on('click', e => {
+  const { lat, lng } = e.latlng;
+  loadWeather(lat.toFixed(4), lng.toFixed(4), `${lat.toFixed(2)}, ${lng.toFixed(2)}`);
+
+  if (clickMarker) map.removeLayer(clickMarker);
+  clickMarker = L.marker([lat, lng], {
+    icon: L.divIcon({
+      className: '',
+      html: `<div style="width:14px;height:14px;background:#8b5cf6;border:2px solid #fff;border-radius:50%;"></div>`,
+      iconAnchor: [7, 7],
+    })
+  }).addTo(map);
+});
+
+// ────────────────────────── Weather Fetch ──────────────────────────
+function loadWeather(lat, lon, name) {
+  document.getElementById('weatherPanel').innerHTML = '<div class="loading">Loading...</div>';
+  document.getElementById('impactPanel').innerHTML = '<div class="loading">Loading impacts...</div>';
+
+  fetch(`/api/weather/current/?lat=${lat}&lon=${lon}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('weatherPanel').innerHTML = `<div class="loading" style="color:#ef4444">${data.error}</div>`;
+        return;
+      }
+      const wIcon = getWeatherEmoji(data.weather_condition);
+      document.getElementById('weatherPanel').innerHTML = `
+        <div class="weather-card">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <div style="font-size:0.82rem;font-weight:600;margin-bottom:2px">${name || data.city_name || 'Location'}</div>
+              <div style="font-size:0.75rem;color:var(--muted)">${data.weather_description}</div>
+            </div>
+            <div style="font-size:1.6rem">${wIcon}</div>
+          </div>
+          <div class="weather-temp">${data.temperature_c?.toFixed(1)}°C</div>
+          <div class="weather-row">
+            <span>Feels ${data.feels_like_c?.toFixed(1)}°C</span>
+            <span>Humidity ${data.humidity_percent}%</span>
+          </div>
+          <div class="weather-row">
+            <span>Wind ${data.wind_speed_ms?.toFixed(1)} m/s</span>
+            <span>Pressure ${data.pressure_hpa} hPa</span>
+          </div>
+          <div class="weather-row">
+            <span>Cloud ${data.cloud_cover_percent}%</span>
+            ${data.precipitation_mm ? `<span>Precip ${data.precipitation_mm}mm</span>` : ''}
+          </div>
+        </div>
+      `;
+    })
+    .catch(e => {
+      document.getElementById('weatherPanel').innerHTML = `<div class="loading" style="color:#ef4444">Error: ${e.message}</div>`;
+    });
+
+  // Load ENSO impacts
+  fetch(`/api/enso/regional-impacts/?lat=${lat}&lon=${lon}`)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.impacts || data.impacts.length === 0) {
+        document.getElementById('impactPanel').innerHTML = '<div class="loading">No specific regional impacts defined for this location.</div>';
+        return;
+      }
+      document.getElementById('impactPanel').innerHTML = data.impacts.map(imp => `
+        <div class="impact-item">
+          <div class="impact-region">${imp.region_name}</div>
+          <div class="impact-text">${imp.impact}</div>
+          <div class="impact-season">📅 ${imp.affected_season} · ${imp.impact_variable}</div>
+        </div>
+      `).join('');
+    })
+    .catch(() => {
+      document.getElementById('impactPanel').innerHTML = '<div class="loading">Could not load impact data.</div>';
+    });
+}
+
+// ────────────────────────── City Search ──────────────────────────
+function searchCity() {
+  const city = document.getElementById('citySearch').value.trim();
+  if (!city) return;
+  document.getElementById('searchResults').textContent = 'Searching...';
+
+  fetch(`/api/geocode/?city=${encodeURIComponent(city)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById('searchResults').innerHTML = `<span style="color:#ef4444">${data.error}</span>`;
+        return;
+      }
+      if (!data.locations || data.locations.length === 0) {
+        document.getElementById('searchResults').textContent = 'No results found.';
+        return;
+      }
+      const loc = data.locations[0];
+      map.flyTo([loc.latitude, loc.longitude], 8, { duration: 1.5 });
+      loadWeather(loc.latitude, loc.longitude, loc.name);
+      document.getElementById('searchResults').innerHTML = `<span style="color:var(--success)">→ ${loc.name}, ${loc.country}</span>`;
+    })
+    .catch(() => {
+      document.getElementById('searchResults').innerHTML = '<span style="color:#ef4444">Geocoding requires an OpenWeatherMap API key.</span>';
+    });
+}
+
+document.getElementById('citySearch').addEventListener('keydown', e => {
+  if (e.key === 'Enter') searchCity();
+});
+
+// ────────────────────────── Layer Toggle ──────────────────────────
+function toggleLayer(name) {
+  layerVis[name] = !layerVis[name];
+  const btn = [...document.querySelectorAll('.layer-btn')].find(b => b.textContent.toLowerCase().includes(name === 'enso' ? 'enso' : name === 'stations' ? 'weather' : 'sst'));
+  if (btn) btn.classList.toggle('active', layerVis[name]);
+
+  if (name === 'enso') {
+    layerVis[name] ? impactLayers.addTo(map) : map.removeLayer(impactLayers);
+  } else if (name === 'stations') {
+    layerVis[name] ? stationLayer.addTo(map) : map.removeLayer(stationLayer);
+  } else if (name === 'sst') {
+    layerVis[name] ? sstLayer.addTo(map) : map.removeLayer(sstLayer);
+  }
+}
+
+// ────────────────────────── Helpers ──────────────────────────
+function getWeatherEmoji(condition) {
+  const c = (condition || '').toLowerCase();
+  if (c.includes('clear')) return '☀️';
+  if (c.includes('cloud')) return '☁️';
+  if (c.includes('rain')) return '🌧️';
+  if (c.includes('snow')) return '❄️';
+  if (c.includes('thunder')) return '⛈️';
+  if (c.includes('fog') || c.includes('mist') || c.includes('haze')) return '🌫️';
+  if (c.includes('drizzle')) return '🌦️';
+  return '🌡️';
+}
+</script>
+{% endblock %}

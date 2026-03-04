@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ENSOpy — Climate Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   DESIGN: Deep-ocean scientific terminal
+   Syne (display) + Outfit (body) + JetBrains Mono (data)
+   Palette: Abyss navy → electric teal → bioluminescent glow
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+:root {
+  --abyss:     #04080f;
+  --deep:      #080d1a;
+  --navy:      #0c1628;
+  --surface:   #111d33;
+  --surface2:  #172240;
+  --rim:       #1e3058;
+  --border:    #243a5e;
+  --muted:     #4a6285;
+  --soft:      #7a96b8;
+  --text:      #c8ddf0;
+  --bright:    #e8f4ff;
+  --teal:      #00d4cc;
+  --teal2:     #00b8e6;
+  --glow:      #00ffee;
+  --el:        #ff4d6d;
+  --la:        #3a86ff;
+  --gold:      #f4b942;
+  --green:     #00e5a0;
+  --mono: 'JetBrains Mono', monospace;
+  --body: 'Outfit', sans-serif;
+  --display: 'Syne', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--abyss);
+  color:var(--text);
+  font-family:var(--body);
+  font-size:15px;
+  line-height:1.6;
+}
+
+/* ─── ANIMATED OCEAN BACKGROUND ─── */
+.ocean-bg{
+  position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 120% 80% at 10% 20%, rgba(0,212,204,0.07) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 90% 80%, rgba(0,184,230,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 50% 50%, rgba(0,255,238,0.03) 0%, transparent 60%),
+    linear-gradient(180deg, #04080f 0%, #080d1a 40%, #0c1628 100%);
+}
+.wave-layer{
+  position:fixed;inset:0;z-index:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 47px,
+    rgba(0,212,204,0.025) 48px
+  ),
+  repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 47px,
+    rgba(0,212,204,0.015) 48px
+  );
+  animation:waveDrift 20s linear infinite;
+}
+@keyframes waveDrift{
+  0%{transform:translate(0,0)}
+  100%{transform:translate(48px,48px)}
+}
+.particles{position:fixed;inset:0;z-index:0;pointer-events:none}
+.particle{
+  position:absolute;
+  border-radius:50%;
+  background:var(--teal);
+  animation:float linear infinite;
+  opacity:0;
+}
+@keyframes float{
+  0%{transform:translateY(100vh) scale(0);opacity:0}
+  5%{opacity:1}
+  95%{opacity:0.6}
+  100%{transform:translateY(-20vh) scale(1.5);opacity:0}
+}
+
+/* ─── LAYOUT ─── */
+.shell{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-columns:1fr 500px;
+  min-height:100vh;
+}
+
+/* ─── LEFT PANEL ─── */
+.left{
+  display:flex;flex-direction:column;
+  justify-content:center;
+  padding:4rem 4rem 4rem 5rem;
+  position:relative;overflow:hidden;
+}
+
+.logo{
+  position:absolute;top:2.5rem;left:5rem;
+  font-family:var(--display);
+  font-size:1.1rem;font-weight:800;
+  color:var(--teal);letter-spacing:-0.02em;
+}
+.logo em{color:var(--bright);font-style:normal}
+
+.tagline{
+  font-family:var(--mono);font-size:0.65rem;
+  color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;
+  margin-bottom:1.5rem;
+  animation:fadeUp 0.6s 0.1s both;
+}
+
+.headline{
+  font-family:var(--display);
+  font-size:3.2rem;font-weight:800;
+  line-height:1.08;
+  letter-spacing:-0.03em;
+  margin-bottom:1.5rem;
+  animation:fadeUp 0.6s 0.2s both;
+}
+.headline .hl-teal{
+  display:block;
+  background:linear-gradient(90deg, var(--teal), var(--teal2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.headline .hl-warm{
+  display:block;
+  background:linear-gradient(90deg, var(--el), var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+.sub{
+  font-size:1rem;color:var(--soft);
+  line-height:1.75;max-width:440px;
+  margin-bottom:2.5rem;
+  animation:fadeUp 0.6s 0.3s both;
+}
+
+/* Feature cards */
+.features{
+  display:flex;flex-direction:column;gap:0.6rem;
+  margin-bottom:2.5rem;
+  animation:fadeUp 0.6s 0.4s both;
+}
+.feat{
+  display:flex;align-items:center;gap:1rem;
+  padding:0.8rem 1.1rem;
+  background:rgba(17,29,51,0.7);
+  border:1px solid var(--rim);
+  border-radius:10px;
+  backdrop-filter:blur(8px);
+  transition:border-color 0.25s,transform 0.2s;
+}
+.feat:hover{border-color:var(--teal);transform:translateX(4px)}
+.feat-icon{
+  width:34px;height:34px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;flex-shrink:0;
+}
+.feat-icon.teal{background:rgba(0,212,204,0.12);border:1px solid rgba(0,212,204,0.2)}
+.feat-icon.red{background:rgba(255,77,109,0.12);border:1px solid rgba(255,77,109,0.2)}
+.feat-icon.blue{background:rgba(58,134,255,0.12);border:1px solid rgba(58,134,255,0.2)}
+.feat-icon.gold{background:rgba(244,185,66,0.12);border:1px solid rgba(244,185,66,0.2)}
+.feat-body{flex:1}
+.feat-title{font-size:0.85rem;font-weight:600;color:var(--bright);margin-bottom:1px}
+.feat-desc{font-size:0.75rem;color:var(--muted);line-height:1.4}
+
+/* ONI ticker */
+.oni-ticker{
+  display:flex;gap:0.75rem;flex-wrap:wrap;
+  animation:fadeUp 0.6s 0.5s both;
+}
+.ticker-chip{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:100px;
+  font-family:var(--mono);font-size:0.68rem;
+}
+.chip-neutral{background:rgba(74,98,133,0.2);border:1px solid rgba(74,98,133,0.4);color:var(--soft)}
+.chip-el{background:rgba(255,77,109,0.12);border:1px solid rgba(255,77,109,0.3);color:#ff8099}
+.chip-la{background:rgba(58,134,255,0.12);border:1px solid rgba(58,134,255,0.3);color:#7aadff}
+.chip-dot{width:6px;height:6px;border-radius:50%}
+.dot-teal{background:var(--teal)}
+.dot-el{background:var(--el)}
+.dot-la{background:var(--la)}
+.dot-neutral{background:var(--muted)}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ─── RIGHT PANEL ─── */
+.right{
+  background:var(--navy);
+  border-left:1px solid var(--rim);
+  display:flex;flex-direction:column;
+  justify-content:center;
+  padding:3rem;
+  position:relative;
+  overflow-y:auto;
+}
+.right::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--teal),var(--teal2),var(--teal));
+}
+
+/* ─── SCREEN SYSTEM ─── */
+.screen{display:none;animation:screenIn 0.35s ease both}
+.screen.active{display:block}
+@keyframes screenIn{
+  from{opacity:0;transform:translateX(18px)}
+  to{opacity:1;transform:translateX(0)}
+}
+
+/* Screen nav */
+.screen-tabs{
+  display:flex;gap:0;margin-bottom:2rem;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  overflow:hidden;
+}
+.stab{
+  flex:1;padding:9px 0;text-align:center;
+  font-family:var(--mono);font-size:0.68rem;letter-spacing:0.05em;
+  color:var(--muted);cursor:pointer;transition:all 0.2s;
+  background:none;border:none;border-right:1px solid var(--border);
+}
+.stab:last-child{border-right:none}
+.stab:hover{color:var(--text);background:var(--surface2)}
+.stab.on{background:rgba(0,212,204,0.1);color:var(--teal)}
+
+/* ─── FORM ELEMENTS ─── */
+.fh{margin-bottom:1.75rem}
+.fh-title{
+  font-family:var(--display);font-size:1.5rem;
+  font-weight:700;letter-spacing:-0.02em;
+  color:var(--bright);margin-bottom:4px;
+}
+.fh-sub{font-size:0.82rem;color:var(--muted)}
+.fh-sub a{color:var(--teal);text-decoration:none}
+.fh-sub a:hover{text-decoration:underline}
+
+.field{margin-bottom:1rem}
+.fl{
+  display:block;font-size:0.72rem;font-weight:500;
+  color:var(--soft);margin-bottom:5px;letter-spacing:0.03em;
+  text-transform:uppercase;
+}
+.fl .opt{color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;font-size:0.68rem}
+
+.fi{
+  width:100%;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--bright);
+  padding:10px 14px;
+  font-family:var(--body);font-size:0.9rem;
+  outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s,background 0.2s;
+}
+.fi:focus{
+  border-color:var(--teal);
+  background:var(--surface2);
+  box-shadow:0 0 0 3px rgba(0,212,204,0.1);
+}
+.fi::placeholder{color:var(--muted)}
+.fi.err{border-color:var(--el);box-shadow:0 0 0 3px rgba(255,77,109,0.1)}
+.fi.ok{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,229,160,0.1)}
+select.fi{appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234a6285' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:14px;
+  padding-right:36px;
+}
+
+.pw-wrap{position:relative}
+.pw-wrap .fi{padding-right:60px}
+.pw-tog{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  cursor:pointer;color:var(--muted);font-family:var(--mono);font-size:0.62rem;
+  background:none;border:none;transition:color 0.15s;letter-spacing:0.05em;
+}
+.pw-tog:hover{color:var(--teal)}
+
+.strength-bar{height:3px;background:var(--surface2);border-radius:2px;margin-top:5px;overflow:hidden}
+.strength-fill{height:100%;border-radius:2px;width:0;transition:width 0.3s,background 0.3s}
+
+/* API Key special field */
+.api-key-field{
+  background:rgba(0,212,204,0.04);
+  border:1px solid rgba(0,212,204,0.15);
+  border-radius:10px;padding:1.1rem;
+  margin-bottom:1rem;
+}
+.akf-header{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:0.5rem;
+}
+.akf-title{font-size:0.82rem;font-weight:600;color:var(--teal)}
+.akf-badge{
+  font-family:var(--mono);font-size:0.58rem;padding:2px 7px;border-radius:4px;
+  background:rgba(0,229,160,0.12);color:var(--green);border:1px solid rgba(0,229,160,0.25);
+}
+.akf-desc{font-size:0.75rem;color:var(--muted);line-height:1.6;margin-bottom:0.75rem}
+.akf-link{
+  font-family:var(--mono);font-size:0.68rem;color:var(--teal);
+  text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+}
+.akf-link:hover{text-decoration:underline}
+
+/* Key status indicator */
+.key-status{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;border-radius:7px;
+  font-family:var(--mono);font-size:0.7rem;
+  margin-top:6px;
+}
+.ks-none{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.ks-checking{background:rgba(244,185,66,0.08);color:var(--gold);border:1px solid rgba(244,185,66,0.2)}
+.ks-ok{background:rgba(0,229,160,0.08);color:var(--green);border:1px solid rgba(0,229,160,0.2)}
+.ks-err{background:rgba(255,77,109,0.08);color:#ff8099;border:1px solid rgba(255,77,109,0.2)}
+.ks-pulse{
+  width:7px;height:7px;border-radius:50%;flex-shrink:0;
+  animation:pulse 1.5s ease infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* Row grids */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+
+/* ─── BUTTONS ─── */
+.btn{
+  width:100%;padding:11px;border-radius:9px;
+  font-family:var(--body);font-size:0.95rem;font-weight:600;
+  cursor:pointer;border:none;transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  color:var(--abyss);
+}
+.btn-primary:hover{
+  background:linear-gradient(135deg,#00ffee,#00d4cc);
+  box-shadow:0 0 24px rgba(0,212,204,0.35);
+  transform:translateY(-1px);
+}
+.btn-primary:active{transform:translateY(0)}
+.btn-ghost{
+  background:var(--surface);color:var(--soft);
+  border:1px solid var(--border);
+}
+.btn-ghost:hover{background:var(--surface2);color:var(--text)}
+.btn-sm{width:auto;padding:6px 14px;font-size:0.8rem;border-radius:7px}
+.btn-danger{background:rgba(255,77,109,0.12);color:#ff8099;border:1px solid rgba(255,77,109,0.25)}
+.btn-danger:hover{background:rgba(255,77,109,0.2)}
+
+/* Step pills */
+.steps{
+  display:flex;gap:0;overflow:hidden;
+  border:1px solid var(--border);border-radius:9px;
+  margin-bottom:1.75rem;background:var(--surface);
+}
+.step{
+  flex:1;padding:8px 6px;text-align:center;
+  font-family:var(--mono);font-size:0.62rem;letter-spacing:0.05em;
+  color:var(--muted);cursor:pointer;transition:all 0.2s;
+  border-right:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.step:last-child{border-right:none}
+.step.active{background:rgba(0,212,204,0.08);color:var(--teal)}
+.step.done{color:var(--green);background:rgba(0,229,160,0.05)}
+.step-n{
+  width:18px;height:18px;border-radius:50%;
+  background:var(--border);color:var(--muted);
+  font-family:var(--mono);font-size:0.6rem;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.step.active .step-n{background:var(--teal);color:var(--abyss)}
+.step.done .step-n{background:var(--green);color:var(--abyss)}
+
+/* Sections */
+.section{display:none}
+.section.open{display:block}
+
+/* Divider */
+.divider{
+  display:flex;align-items:center;gap:10px;
+  margin:1.25rem 0;font-size:0.75rem;color:var(--muted);
+}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ─── ALERTS ─── */
+.alert{
+  border-radius:8px;padding:10px 14px;margin-bottom:1rem;
+  font-size:0.8rem;display:flex;align-items:flex-start;gap:8px;
+  line-height:1.5;
+}
+.al-err{background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.25);color:#ff8099}
+.al-ok{background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.25);color:var(--green)}
+.al-info{background:rgba(0,212,204,0.05);border:1px solid rgba(0,212,204,0.2);color:var(--soft)}
+
+/* ─── PROFILE SCREEN ─── */
+.profile-header{
+  display:flex;align-items:center;gap:1rem;
+  padding:1rem 1.1rem;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;margin-bottom:1.5rem;
+}
+.avatar{
+  width:46px;height:46px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--teal),var(--teal2));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--display);font-size:1.1rem;font-weight:800;
+  color:var(--abyss);
+}
+.profile-name{font-size:0.95rem;font-weight:600;color:var(--bright);margin-bottom:2px}
+.profile-meta{font-family:var(--mono);font-size:0.67rem;color:var(--muted)}
+.profile-badge{
+  margin-left:auto;
+  font-family:var(--mono);font-size:0.62rem;
+  padding:3px 9px;border-radius:5px;
+}
+
+/* Key cards */
+.keys-list{display:flex;flex-direction:column;gap:0.6rem;margin-bottom:1rem}
+.key-card{
+  display:flex;align-items:center;gap:0.9rem;
+  padding:0.85rem 1rem;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:9px;transition:border-color 0.2s;
+}
+.key-card:hover{border-color:var(--rim)}
+.key-card.active-key{
+  border-color:var(--teal);
+  background:rgba(0,212,204,0.03);
+}
+.kc-icon{font-size:1.2rem;flex-shrink:0}
+.kc-info{flex:1;min-width:0}
+.kc-name{font-size:0.83rem;font-weight:600;color:var(--bright);
+  display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.kc-val{font-family:var(--mono);font-size:0.68rem;color:var(--muted);letter-spacing:0.04em}
+.kc-meta{font-size:0.68rem;color:var(--muted);margin-top:2px}
+.kc-actions{display:flex;gap:5px;flex-shrink:0}
+.kc-btn{
+  padding:4px 10px;border-radius:6px;font-size:0.7rem;font-weight:500;
+  cursor:pointer;border:none;font-family:var(--body);transition:all 0.15s;
+}
+.kc-use{background:rgba(0,212,204,0.12);color:var(--teal)}
+.kc-use:hover{background:rgba(0,212,204,0.22)}
+.kc-del{background:rgba(255,77,109,0.1);color:#ff8099}
+.kc-del:hover{background:rgba(255,77,109,0.2)}
+.tag-active{
+  background:rgba(0,212,204,0.12);color:var(--teal);
+  border:1px solid rgba(0,212,204,0.25);
+  font-family:var(--mono);font-size:0.58rem;padding:1px 6px;border-radius:4px;
+}
+.tag-inactive{
+  background:rgba(74,98,133,0.15);color:var(--muted);
+  border:1px solid var(--border);
+  font-family:var(--mono);font-size:0.58rem;padding:1px 6px;border-radius:4px;
+}
+
+/* empty state */
+.empty-keys{
+  text-align:center;padding:1.5rem 1rem;
+  background:var(--surface);border:1px dashed var(--border);
+  border-radius:9px;margin-bottom:1rem;
+  font-size:0.8rem;color:var(--muted);
+}
+.empty-keys .ei{font-size:1.5rem;margin-bottom:0.4rem}
+
+/* Add key toggle */
+.add-toggle{
+  width:100%;background:none;border:1px dashed var(--border);
+  border-radius:8px;color:var(--muted);
+  font-family:var(--body);font-size:0.82rem;
+  padding:9px;cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.add-toggle:hover{border-color:var(--teal);color:var(--teal);background:rgba(0,212,204,0.04)}
+
+.add-form{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:9px;padding:1rem;margin-top:0.75rem;
+  display:none;
+}
+.add-form.open{display:block}
+
+/* Check row */
+.check-row{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:0.25rem 0 1.25rem;
+}
+.chk-label{
+  display:flex;align-items:center;gap:7px;
+  font-size:0.8rem;color:var(--muted);cursor:pointer;
+}
+.chk-label input{accent-color:var(--teal)}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .left{display:none}
+  .right{border-left:none;padding:2rem 1.5rem;min-height:100vh;overflow-y:auto}
+  html,body{overflow:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND -->
+<div class="ocean-bg"></div>
+<div class="wave-layer"></div>
+<div class="particles" id="particles"></div>
+
+<!-- LAYOUT -->
+<div class="shell">
+
+  <!-- ════════ LEFT PANEL ════════ -->
+  <div class="left">
+    <div class="logo">ENSO<em>py</em></div>
+
+    <p class="tagline">Climate Intelligence Platform</p>
+
+    <h1 class="headline">
+      <span>Track</span>
+      <span class="hl-teal">El Niño & La Niña</span>
+      <span class="hl-warm">before they strike.</span>
+    </h1>
+
+    <p class="sub">
+      Real-time ENSO monitoring, live weather APIs, and geospatial 
+      climate teleconnections — all in one platform. Bring your own API key 
+      for full access.
+    </p>
+
+    <div class="features">
+      <div class="feat">
+        <div class="feat-icon teal">🌊</div>
+        <div class="feat-body">
+          <div class="feat-title">ONI & SST Monitoring</div>
+          <div class="feat-desc">Oceanic Niño Index tracking with historical series from 2010 to present</div>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon red">🌡️</div>
+        <div class="feat-body">
+          <div class="feat-title">Live Weather APIs</div>
+          <div class="feat-desc">Open-Meteo (free, no key) + OpenWeatherMap forecasts, air quality & geocoding</div>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon blue">🗺️</div>
+        <div class="feat-body">
+          <div class="feat-title">Geospatial Map</div>
+          <div class="feat-desc">Interactive Leaflet map with ENSO impact regions and per-click weather data</div>
+        </div>
+      </div>
+      <div class="feat">
+        <div class="feat-icon gold">🔑</div>
+        <div class="feat-body">
+          <div class="feat-title">Per-User API Keys</div>
+          <div class="feat-desc">Each user brings their own OpenWeatherMap or NOAA key — stored securely per account</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="oni-ticker">
+      <div class="ticker-chip chip-neutral">
+        <span class="chip-dot dot-neutral"></span> NEUTRAL: ONI 0.0
+      </div>
+      <div class="ticker-chip chip-el">
+        <span class="chip-dot dot-el"></span> EL NIÑO ≥ +0.5
+      </div>
+      <div class="ticker-chip chip-la">
+        <span class="chip-dot dot-la"></span> LA NIÑA ≤ −0.5
+      </div>
+      <div class="ticker-chip chip-neutral" style="color:var(--teal);border-color:rgba(0,212,204,0.3);background:rgba(0,212,204,0.08)">
+        <span class="chip-dot dot-teal"></span> FREE TIER AVAILABLE
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ RIGHT PANEL ════════ -->
+  <div class="right">
+
+    <!-- NAV TABS -->
+    <div class="screen-tabs">
+      <button class="stab on" onclick="showScreen('login',this)">Sign In</button>
+      <button class="stab" onclick="showScreen('register',this)">Register</button>
+      <button class="stab" onclick="showScreen('profile',this)">Profile</button>
+    </div>
+
+    <!-- ══════ LOGIN SCREEN ══════ -->
+    <div class="screen active" id="screen-login">
+      <div class="fh">
+        <div class="fh-title">Welcome back</div>
+        <div class="fh-sub">New to ENSOpy? <a href="#" onclick="switchTab('register');return false">Create a free account →</a></div>
+      </div>
+
+      <div class="alert al-err" id="login-err" style="display:none">
+        <span>⚠</span><span id="login-err-msg">Invalid username or password.</span>
+      </div>
+      <div class="alert al-ok" id="login-ok" style="display:none">
+        <span>✓</span><span>Signed in successfully! Redirecting to dashboard…</span>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="field">
+          <label class="fl" for="l-user">Username</label>
+          <input class="fi" type="text" id="l-user" placeholder="Your username" autocomplete="username" autofocus/>
+        </div>
+
+        <div class="field">
+          <label class="fl" for="l-pw">Password</label>
+          <div class="pw-wrap">
+            <input class="fi" type="password" id="l-pw" placeholder="Your password" autocomplete="current-password"/>
+            <button type="button" class="pw-tog" onclick="togPw('l-pw',this)">SHOW</button>
+          </div>
+        </div>
+
+        <div class="check-row">
+          <label class="chk-label">
+            <input type="checkbox" id="l-rem"/> Remember me
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="login-btn">
+          <span>Sign In</span>
+          <span>→</span>
+        </button>
+      </form>
+
+      <div class="divider">or continue with</div>
+
+      <div style="display:flex;flex-direction:column;gap:0.5rem">
+        <button class="btn btn-ghost" onclick="demoLogin()">
+          <span>🧪</span> <span>Try Demo Account</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ══════ REGISTER SCREEN ══════ -->
+    <div class="screen" id="screen-register">
+      <div class="fh">
+        <div class="fh-title">Create account</div>
+        <div class="fh-sub">Already registered? <a href="#" onclick="switchTab('login');return false">Sign in →</a></div>
+      </div>
+
+      <!-- STEP INDICATOR -->
+      <div class="steps">
+        <div class="step active" id="rs1" onclick="goStep(1)">
+          <div class="step-n" id="sn1">1</div>
+          ACCOUNT
+        </div>
+        <div class="step" id="rs2" onclick="goStep(2)">
+          <div class="step-n" id="sn2">2</div>
+          PROFILE
+        </div>
+        <div class="step" id="rs3" onclick="goStep(3)">
+          <div class="step-n" id="sn3">3</div>
+          API KEY
+        </div>
+      </div>
+
+      <div class="alert al-err" id="reg-err" style="display:none">
+        <span>⚠</span><span id="reg-err-msg">Please fix the errors below.</span>
+      </div>
+
+      <form id="regForm" onsubmit="handleRegister(event)">
+
+        <!-- STEP 1: Account -->
+        <div class="section open" id="reg-s1">
+          <div class="field">
+            <label class="fl" for="r-user">Username</label>
+            <input class="fi" type="text" id="r-user" placeholder="Choose a unique username" autocomplete="username"/>
+          </div>
+          <div class="field">
+            <label class="fl" for="r-email">Email <span class="opt">(optional, for recovery)</span></label>
+            <input class="fi" type="email" id="r-email" placeholder="your@email.com" autocomplete="email"/>
+          </div>
+          <div class="field">
+            <label class="fl" for="r-pw">Password</label>
+            <div class="pw-wrap">
+              <input class="fi" type="password" id="r-pw" placeholder="Min. 8 characters" oninput="checkStrength(this.value)"/>
+              <button type="button" class="pw-tog" onclick="togPw('r-pw',this)">SHOW</button>
+            </div>
+            <div class="strength-bar"><div class="strength-fill" id="s-fill"></div></div>
+          </div>
+          <div class="field">
+            <label class="fl" for="r-pw2">Confirm password</label>
+            <div class="pw-wrap">
+              <input class="fi" type="password" id="r-pw2" placeholder="Repeat password"/>
+              <button type="button" class="pw-tog" onclick="togPw('r-pw2',this)">SHOW</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="nextStep(1)">
+            Next: Profile <span>→</span>
+          </button>
+        </div>
+
+        <!-- STEP 2: Profile -->
+        <div class="section" id="reg-s2">
+          <div class="row2">
+            <div class="field">
+              <label class="fl" for="r-fn">First name <span class="opt">opt</span></label>
+              <input class="fi" type="text" id="r-fn" placeholder="First"/>
+            </div>
+            <div class="field">
+              <label class="fl" for="r-ln">Last name <span class="opt">opt</span></label>
+              <input class="fi" type="text" id="r-ln" placeholder="Last"/>
+            </div>
+          </div>
+          <div class="field">
+            <label class="fl" for="r-org">Organization <span class="opt">opt</span></label>
+            <input class="fi" type="text" id="r-org" placeholder="University, company, agency…"/>
+          </div>
+          <div class="field">
+            <label class="fl" for="r-purpose">Primary use case</label>
+            <select class="fi" id="r-purpose">
+              <option value="research">Climate Research</option>
+              <option value="education">Education</option>
+              <option value="forecasting">Weather Forecasting</option>
+              <option value="agriculture">Agriculture</option>
+              <option value="government">Government / Policy</option>
+              <option value="personal" selected>Personal Use</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:0.6rem">
+            <button type="button" class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+            <button type="button" class="btn btn-primary" onclick="nextStep(2)">Next: API Key →</button>
+          </div>
+        </div>
+
+        <!-- STEP 3: API Key -->
+        <div class="section" id="reg-s3">
+          <div class="api-key-field">
+            <div class="akf-header">
+              <span class="akf-title">🔑 OpenWeatherMap API Key</span>
+              <span class="akf-badge">OPTIONAL</span>
+            </div>
+            <p class="akf-desc">
+              Without a key, current weather via Open-Meteo works free. Add your 
+              OpenWeatherMap key to enable <strong style="color:var(--text)">city search, 
+              5-day forecasts, geocoding & air quality</strong>. 
+              Free tier: 1,000 calls/day.
+            </p>
+            <a class="akf-link" href="https://openweathermap.org/api" target="_blank" rel="noopener">
+              ↗ Get a free key at openweathermap.org
+            </a>
+          </div>
+
+          <div class="field">
+            <label class="fl" for="r-apikey">API Key <span class="opt">paste here</span></label>
+            <input class="fi" type="text" id="r-apikey"
+              placeholder="e.g. a1b2c3d4e5f607182930a4b5c6d7e8f9"
+              autocomplete="off" oninput="previewKey(this.value)"/>
+            <div class="key-status ks-none" id="key-status-preview">
+              <span class="ks-pulse" style="background:var(--muted)"></span>
+              No key entered — free tier will be active
+            </div>
+          </div>
+
+          <div style="display:flex;gap:0.6rem">
+            <button type="button" class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+            <button type="submit" class="btn btn-primary" style="background:linear-gradient(135deg,var(--green),var(--teal))">
+              ✓ Create Account
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- ══════ PROFILE SCREEN ══════ -->
+    <div class="screen" id="screen-profile">
+
+      <div class="profile-header">
+        <div class="avatar" id="prof-avatar">CL</div>
+        <div>
+          <div class="profile-name" id="prof-name">Climate Researcher</div>
+          <div class="profile-meta" id="prof-meta">@username · Personal Use</div>
+        </div>
+        <div class="profile-badge" id="prof-badge" style="background:rgba(0,229,160,0.1);color:var(--green);border:1px solid rgba(0,229,160,0.25);font-family:var(--mono);font-size:0.62px;padding:3px 9px;border-radius:5px">
+          ● OWM ACTIVE
+        </div>
+      </div>
+
+      <!-- OWM KEYS -->
+      <div style="font-family:var(--mono);font-size:0.65rem;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.6rem">
+        OpenWeatherMap Keys
+      </div>
+
+      <div class="keys-list" id="keys-list">
+        <!-- Populated by JS -->
+      </div>
+
+      <button class="add-toggle" onclick="toggleAddForm()">
+        <span>+</span> Add New API Key
+      </button>
+
+      <div class="add-form" id="add-form">
+        <div class="row2" style="margin-bottom:0.75rem">
+          <div class="field" style="margin-bottom:0">
+            <label class="fl" for="af-provider">Provider</label>
+            <select class="fi" id="af-provider" style="font-size:0.82rem">
+              <option value="openweathermap">OpenWeatherMap</option>
+              <option value="noaa">NOAA CDO</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label class="fl" for="af-label">Label</label>
+            <input class="fi" type="text" id="af-label" value="My API Key" style="font-size:0.82rem"/>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0.75rem">
+          <label class="fl" for="af-key">API Key</label>
+          <input class="fi" type="text" id="af-key" placeholder="Paste your full API key" autocomplete="off" style="font-size:0.82rem"/>
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-primary btn-sm" onclick="addKey()">Save Key</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleAddForm()">Cancel</button>
+        </div>
+      </div>
+
+      <div class="divider" style="margin:1.25rem 0">profile</div>
+
+      <div class="row2">
+        <div class="field">
+          <label class="fl" for="pf-fn">First name</label>
+          <input class="fi" type="text" id="pf-fn" value="Climate" style="font-size:0.85rem"/>
+        </div>
+        <div class="field">
+          <label class="fl" for="pf-ln">Last name</label>
+          <input class="fi" type="text" id="pf-ln" value="Researcher" style="font-size:0.85rem"/>
+        </div>
+      </div>
+      <div class="field">
+        <label class="fl" for="pf-org">Organization</label>
+        <input class="fi" type="text" id="pf-org" placeholder="Your institution…" style="font-size:0.85rem"/>
+      </div>
+
+      <div style="display:flex;gap:0.6rem;margin-top:0.5rem">
+        <button class="btn btn-primary" onclick="saveProfile()">Save Profile</button>
+        <button class="btn btn-ghost" style="flex:0;padding:0 18px;color:#ff8099;border-color:rgba(255,77,109,0.3)" onclick="switchTab('login')">Sign Out</button>
+      </div>
+
+      <div class="alert al-ok" id="prof-ok" style="display:none;margin-top:1rem">
+        <span>✓</span> Profile saved successfully.
+      </div>
+
+    </div>
+
+  </div><!-- /right -->
+</div><!-- /shell -->
+
+<script>
+/* ──────────────────────────────────
+   PARTICLES
+────────────────────────────────── */
+(function(){
+  const c=document.getElementById('particles');
+  for(let i=0;i<22;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const sz=Math.random()*3+1;
+    p.style.cssText=`
+      width:${sz}px;height:${sz}px;
+      left:${Math.random()*100}%;
+      animation-duration:${8+Math.random()*18}s;
+      animation-delay:${Math.random()*12}s;
+      opacity:0;
+    `;
+    c.appendChild(p);
+  }
+})();
+
+/* ──────────────────────────────────
+   SCREEN SWITCHING
+────────────────────────────────── */
+function showScreen(id, tab){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('screen-'+id).classList.add('active');
+  if(tab) tab.classList.add('on');
+  if(id==='profile') renderKeys();
+}
+
+function switchTab(id){
+  const tabs = document.querySelectorAll('.stab');
+  const map = {login:0,register:1,profile:2};
+  showScreen(id, tabs[map[id]]);
+}
+
+/* ──────────────────────────────────
+   PASSWORD TOGGLE
+────────────────────────────────── */
+function togPw(id, btn){
+  const el=document.getElementById(id);
+  el.type=el.type==='password'?'text':'password';
+  btn.textContent=el.type==='password'?'SHOW':'HIDE';
+}
+
+/* ──────────────────────────────────
+   PASSWORD STRENGTH
+────────────────────────────────── */
+function checkStrength(v){
+  let s=0;
+  if(v.length>=8)s++;
+  if(/[A-Z]/.test(v))s++;
+  if(/[0-9]/.test(v))s++;
+  if(/[^A-Za-z0-9]/.test(v))s++;
+  const f=document.getElementById('s-fill');
+  f.style.width=['0%','25%','50%','75%','100%'][s];
+  f.style.background=['#ef4444','#ef4444','#f59e0b','#3a86ff','#00e5a0'][s];
+}
+
+/* ──────────────────────────────────
+   REGISTER STEPS
+────────────────────────────────── */
+let currentStep=1;
+
+function goStep(n){
+  for(let i=1;i<=3;i++){
+    const sec=document.getElementById('reg-s'+i);
+    const ind=document.getElementById('rs'+i);
+    const sn=document.getElementById('sn'+i);
+    sec.classList.toggle('open',i===n);
+    ind.classList.remove('active','done');
+    if(i<n){ind.classList.add('done');sn.textContent='✓';}
+    else if(i===n){ind.classList.add('active');sn.textContent=i;}
+    else{sn.textContent=i;}
+  }
+  currentStep=n;
+}
+
+function nextStep(from){
+  if(from===1){
+    const u=document.getElementById('r-user').value.trim();
+    const p=document.getElementById('r-pw').value;
+    const p2=document.getElementById('r-pw2').value;
+    if(!u){showRegErr('Please choose a username.');return;}
+    if(p.length<8){showRegErr('Password must be at least 8 characters.');return;}
+    if(p!==p2){showRegErr('Passwords do not match.');return;}
+    hideRegErr();
+  }
+  goStep(from+1);
+}
+
+function showRegErr(msg){
+  const e=document.getElementById('reg-err');
+  document.getElementById('reg-err-msg').textContent=msg;
+  e.style.display='flex';
+}
+function hideRegErr(){
+  document.getElementById('reg-err').style.display='none';
+}
+
+/* ──────────────────────────────────
+   API KEY PREVIEW
+────────────────────────────────── */
+function previewKey(val){
+  const el=document.getElementById('key-status-preview');
+  const inp=document.getElementById('r-apikey');
+  const v=val.trim();
+  if(!v){
+    el.className='key-status ks-none';
+    el.innerHTML='<span class="ks-pulse" style="background:var(--muted)"></span>No key entered — free tier will be active';
+    inp.className='fi';
+    return;
+  }
+  if(v.length<10){
+    el.className='key-status ks-err';
+    el.innerHTML='<span class="ks-pulse" style="background:var(--el)"></span>Key looks too short — double-check';
+    inp.className='fi err';
+    return;
+  }
+  el.className='key-status ks-checking';
+  el.innerHTML='<span class="ks-pulse" style="background:var(--gold)"></span>Key entered — will be validated on first API call';
+  inp.className='fi ok';
+}
+
+/* ──────────────────────────────────
+   LOGIN HANDLER (demo)
+────────────────────────────────── */
+function handleLogin(e){
+  e.preventDefault();
+  const u=document.getElementById('l-user').value.trim();
+  const p=document.getElementById('l-pw').value;
+  const errEl=document.getElementById('login-err');
+  const okEl=document.getElementById('login-ok');
+  const btn=document.getElementById('login-btn');
+
+  errEl.style.display='none';okEl.style.display='none';
+  if(!u||!p){
+    errEl.style.display='flex';
+    document.getElementById('login-err-msg').textContent='Please enter your username and password.';
+    return;
+  }
+
+  btn.innerHTML='<span style="opacity:0.6">Signing in…</span>';
+  btn.disabled=true;
+
+  setTimeout(()=>{
+    btn.innerHTML='<span>Sign In</span><span>→</span>';
+    btn.disabled=false;
+
+    // Demo: any non-empty credentials succeed
+    okEl.style.display='flex';
+    // Pre-fill profile with the username
+    document.getElementById('prof-avatar').textContent=u.charAt(0).toUpperCase();
+    document.getElementById('prof-name').textContent=u;
+    document.getElementById('prof-meta').textContent='@'+u+' · Personal Use';
+    setTimeout(()=>{switchTab('profile')},1100);
+  },900);
+}
+
+function demoLogin(){
+  document.getElementById('l-user').value='demo_researcher';
+  document.getElementById('l-pw').value='demo1234';
+  handleLogin(new Event('submit'));
+}
+
+/* ──────────────────────────────────
+   REGISTER HANDLER (demo)
+────────────────────────────────── */
+function handleRegister(e){
+  e.preventDefault();
+  if(currentStep!==3){return;}
+  const u=document.getElementById('r-user').value.trim();
+  const key=document.getElementById('r-apikey').value.trim();
+
+  // Add key to mock store
+  if(key.length>=10){
+    mockKeys.push({id:Date.now(),label:'My OWM Key',provider:'openweathermap',value:key,active:true,added:'Just now'});
+  }
+
+  document.getElementById('prof-avatar').textContent=u.charAt(0).toUpperCase();
+  document.getElementById('prof-name').textContent=u;
+  document.getElementById('prof-meta').textContent='@'+u+' · '+document.getElementById('r-purpose').value;
+
+  const alert=document.createElement('div');
+  alert.className='alert al-ok';
+  alert.style.marginBottom='1rem';
+  alert.innerHTML='<span>✓</span><span>Account created! Taking you to your profile…</span>';
+  document.getElementById('reg-s3').prepend(alert);
+
+  setTimeout(()=>switchTab('profile'),1200);
+}
+
+/* ──────────────────────────────────
+   PROFILE & KEY MANAGEMENT (demo)
+────────────────────────────────── */
+let mockKeys=[
+  {id:1,label:'Primary Key',provider:'openweathermap',value:'a1b2c3d4e5f60718293a4b5c6d7',active:true,added:'Jan 14, 2025'},
+];
+let activeKeyId=1;
+
+function mask(v){
+  if(v.length<=8)return '•'.repeat(v.length);
+  return v.slice(0,4)+'•'.repeat(v.length-8)+v.slice(-4);
+}
+
+function renderKeys(){
+  const list=document.getElementById('keys-list');
+  if(!mockKeys.length){
+    list.innerHTML=`<div class="empty-keys">
+      <div class="ei">🔑</div>
+      No API keys added yet. Add one below to unlock all features.
+    </div>`;
+    document.getElementById('prof-badge').textContent='No Key';
+    document.getElementById('prof-badge').style.background='rgba(74,98,133,0.15)';
+    document.getElementById('prof-badge').style.color='var(--muted)';
+    return;
+  }
+
+  const owm=mockKeys.filter(k=>k.provider==='openweathermap');
+  list.innerHTML=owm.map(k=>`
+    <div class="key-card ${k.id===activeKeyId?'active-key':''}">
+      <div class="kc-icon">🌤️</div>
+      <div class="kc-info">
+        <div class="kc-name">
+          ${k.label}
+          ${k.id===activeKeyId
+            ?'<span class="tag-active">ACTIVE</span>'
+            :'<span class="tag-inactive">INACTIVE</span>'}
+        </div>
+        <div class="kc-val">${mask(k.value)}</div>
+        <div class="kc-meta">Added ${k.added}</div>
+      </div>
+      <div class="kc-actions">
+        ${k.id!==activeKeyId?`<button class="kc-btn kc-use" onclick="setActive(${k.id})">Use</button>`:''}
+        <button class="kc-btn kc-del" onclick="deleteKey(${k.id})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+
+  // Update badge
+  const hasActive=mockKeys.some(k=>k.id===activeKeyId);
+  const badge=document.getElementById('prof-badge');
+  if(hasActive){
+    badge.textContent='● OWM ACTIVE';
+    badge.style.background='rgba(0,229,160,0.1)';
+    badge.style.color='var(--green)';
+    badge.style.borderColor='rgba(0,229,160,0.25)';
+  } else {
+    badge.textContent='No Active Key';
+    badge.style.background='rgba(74,98,133,0.15)';
+    badge.style.color='var(--muted)';
+    badge.style.borderColor='var(--border)';
+  }
+}
+
+function setActive(id){
+  activeKeyId=id;
+  renderKeys();
+}
+
+function deleteKey(id){
+  mockKeys=mockKeys.filter(k=>k.id!==id);
+  if(activeKeyId===id) activeKeyId=mockKeys[0]?.id||null;
+  renderKeys();
+}
+
+let addFormOpen=false;
+function toggleAddForm(){
+  addFormOpen=!addFormOpen;
+  document.getElementById('add-form').classList.toggle('open',addFormOpen);
+}
+
+function addKey(){
+  const provider=document.getElementById('af-provider').value;
+  const label=document.getElementById('af-label').value.trim()||'My API Key';
+  const val=document.getElementById('af-key').value.trim();
+  if(!val||val.length<8){alert('Please enter a valid API key (min 8 characters).');return;}
+  mockKeys.push({id:Date.now(),label,provider,value:val,active:false,added:'Just now'});
+  document.getElementById('af-key').value='';
+  document.getElementById('af-label').value='My API Key';
+  toggleAddForm();
+  renderKeys();
+}
+
+function saveProfile(){
+  const fn=document.getElementById('pf-fn').value.trim();
+  const ln=document.getElementById('pf-ln').value.trim();
+  const name=[fn,ln].filter(Boolean).join(' ')||document.getElementById('prof-name').textContent;
+  document.getElementById('prof-name').textContent=name;
+  const ok=document.getElementById('prof-ok');
+  ok.style.display='flex';
+  setTimeout(()=>ok.style.display='none',2500);
+}
+
+// Initial render
+renderKeys();
+</script>
+</body>
+</html>
